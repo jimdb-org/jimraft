@@ -17,6 +17,7 @@ set(CXX_FLAGS
     -Wno-missing-field-initializers
     -D__STDC_FORMAT_MACROS
     -DASIO_STANDALONE
+    -fPIC
 )
 
 string(REPLACE ";" " " CXX_FLAGS_TEMP "${CXX_FLAGS}")
