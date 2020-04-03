@@ -32,6 +32,7 @@ set(raft_SOURCES
     src/server.cpp
     src/status.cpp
     src/types.cpp
+    src/c.cpp
 )
 
 foreach(f IN LISTS raft_SOURCES)
@@ -56,7 +57,8 @@ install (FILES
      include/raft/statemachine.h
      include/raft/status.h
      include/raft/types.h
-     DESTINATION include/jim/raft)
+     include/raft/c.h
+     DESTINATION raft)
 
 set(raft_test_Deps
      jim-raft
