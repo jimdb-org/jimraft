@@ -13,3 +13,4 @@ endforeach()
 
 add_library(jim-net STATIC ${net_SOURCES})
 add_dependencies(jim-net build-3rd)
+install (TARGETS jim-net DESTINATION lib)
