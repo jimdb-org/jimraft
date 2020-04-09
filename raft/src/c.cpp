@@ -10,6 +10,8 @@
 using jim::Status;
 using jim::raft::CmdResult;
 using jim::raft::ConfChange;
+using jim::raft::LogReader;
+using jim::raft::NodeResolver;
 using jim::raft::Peer;
 using jim::raft::PeerType;
 using jim::raft::Raft;
@@ -20,9 +22,7 @@ using jim::raft::RaftStatus;
 using jim::raft::Snapshot;
 using jim::raft::SnapshotOptions;
 using jim::raft::StateMachine;
-using jim::raft::NodeResolver;
 using jim::raft::TransportOptions;
-using jim::raft::LogReader;
 
 extern "C"
 {
@@ -37,44 +37,44 @@ extern "C"
     };
 
     // Note: free it after use
-    jim_status_t* jim_status_create_with_msg(uint16_t code, char *msg1, char *msg2)
+    jim_status_t *jim_status_create_with_msg(uint16_t code, char *msg1, char *msg2)
     {
         Status rep = Status((Status::Code)(code), std::string(msg1), std::string(msg2));
-        jim_status_t* js = new jim_status_t;
+        jim_status_t *js = new jim_status_t;
         js->rep = rep;
         return js;
     }
 
-    jim_status_t* jim_status_create(uint16_t code)
+    jim_status_t *jim_status_create(uint16_t code)
     {
         Status rep = Status((Status::Code)(code));
-        jim_status_t* js = new jim_status_t;
+        jim_status_t *js = new jim_status_t;
         js->rep = rep;
         return js;
     }
 
-    void jim_free_jim_status_t(jim_status_t* status)
+    void jim_free_jim_status_t(jim_status_t *status)
     {
         free(status);
     }
 
     // Note: free it after use
-    char *jim_status_get_string(jim_status_t* status)
+    char *jim_status_get_string(jim_status_t *status)
     {
-        FLOG_DEBUG("jim_status_string: %s\n",status->rep.ToString().c_str());
+        FLOG_DEBUG("jim_status_string: %s\n", status->rep.ToString().c_str());
         return strdup(status->rep.ToString().c_str());
     }
 
-    void jim_free_jim_status_string(char* str)
+    void jim_free_jim_status_string(char *str)
     {
         free(str);
     }
-    
-    uint16_t jim_status_get_code(jim_status_t* status)
+
+    uint16_t jim_status_get_code(jim_status_t *status)
     {
         return static_cast<uint16_t>(status->rep.code());
     }
-    
+
     struct raft_t
     {
         Raft *rep;
@@ -128,12 +128,12 @@ extern "C"
         return peers;
     };
 
-    void raft_free_raft_peers_t(raft_peers_t* peers)
+    void raft_free_raft_peers_t(raft_peers_t *peers)
     {
         free(peers);
     }
 
-    void raft_add_peers(raft_peers_t* peers,int8_t type,uint64_t node_id,uint64_t peer_id)
+    void raft_add_peers(raft_peers_t *peers, int8_t type, uint64_t node_id, uint64_t peer_id)
     {
         Peer peer;
         peer.node_id = node_id;
@@ -158,7 +158,7 @@ extern "C"
         return new raft_options_t;
     }
 
-    void raft_free_raft_options_t(raft_options_t* options)
+    void raft_free_raft_options_t(raft_options_t *options)
     {
         free(options);
     }
@@ -191,7 +191,7 @@ extern "C"
     {
         return new raft_server_options_t;
     }
-    void raft_free_raft_server_options_t(raft_server_options_t* srv_options)
+    void raft_free_raft_server_options_t(raft_server_options_t *srv_options)
     {
         free(srv_options);
     }
@@ -231,11 +231,10 @@ extern "C"
     {
         ops.rep.transport_options.connection_pool_size = size;
     }
-    void raft_server_options_set_node_resolver(raft_server_options_t &ops,raft_node_resolver_t *nr)
+    void raft_server_options_set_node_resolver(raft_server_options_t &ops, raft_node_resolver_t *nr)
     {
         ops.rep.transport_options.resolver = std::static_pointer_cast<NodeResolver>(std::shared_ptr<raft_node_resolver_t>(nr));
     }
-
 
     // snapshot related
     struct raft_snapshot_t : public Snapshot
@@ -274,45 +273,45 @@ extern "C"
     // node_resolver related
     struct raft_node_resolver_t : public NodeResolver
     {
-       void *nresolver_;
-       void (*destructor_)(void *);
-       char* (*get_node_address)(void *,uint64_t node_id);
- 
-       raft_node_resolver_t()
-       {
-           // do nothing
-       } 
+        void *nresolver_;
+        void (*destructor_)(void *);
+        char *(*get_node_address)(void *, uint64_t node_id);
 
-       raft_node_resolver_t(const raft_node_resolver_t &)
-       {
-           //TODO impl me
-       }
+        raft_node_resolver_t()
+        {
+            // do nothing
+        }
 
-       ~raft_node_resolver_t() override
-       {
-           (*destructor_)(nresolver_);
-       }
+        raft_node_resolver_t(const raft_node_resolver_t &)
+        {
+            //TODO impl me
+        }
 
-       std::string GetNodeAddress(uint64_t node_id) override
-       {
-           char* ip = (*get_node_address)(nresolver_,node_id);
-           return std::string(ip);
-       }
+        ~raft_node_resolver_t() override
+        {
+            (*destructor_)(nresolver_);
+        }
+
+        std::string GetNodeAddress(uint64_t node_id) override
+        {
+            char *ip = (*get_node_address)(nresolver_, node_id);
+            return std::string(ip);
+        }
     };
 
     raft_node_resolver_t *raft_node_resolver_create(
         void *nresolver_,
         void (*destructor_)(void *),
-        char* (*get_node_address)(void *,uint64_t node_id))
+        char *(*get_node_address)(void *, uint64_t node_id))
     {
-        raft_node_resolver_t* result = new raft_node_resolver_t;
+        raft_node_resolver_t *result = new raft_node_resolver_t;
         result->nresolver_ = nresolver_;
         result->destructor_ = destructor_;
         result->get_node_address = get_node_address;
         return result;
-    } 
+    }
 
-    void raft_free_raft_node_resolver(raft_node_resolver_t* nresolver)
+    void raft_free_raft_node_resolver(raft_node_resolver_t *nresolver)
     {
         free(nresolver);
     }
@@ -455,7 +454,7 @@ extern "C"
         return result;
     }
 
-    void raft_free_raft_state_machine_t(raft_state_machine_t* sm)
+    void raft_free_raft_state_machine_t(raft_state_machine_t *sm)
     {
         free(sm);
     }
@@ -475,7 +474,7 @@ extern "C"
         return result;
     }
 
-    void raft_free_raft_server_cache(raft_server_cache* cache)
+    void raft_free_raft_server_cache(raft_server_cache *cache)
     {
         free(cache);
     }
@@ -497,8 +496,8 @@ extern "C"
         result->rep = r;
         return result;
     }
-    
-    void raft_free_raft_cache(raft_cache* cache)
+
+    void raft_free_raft_cache(raft_cache *cache)
     {
         free(cache);
     }
@@ -515,56 +514,56 @@ extern "C"
 
     raft_term_info *raft_get_leader_term(raft_cache &raft)
     {
-        uint64_t leader=0;
-        uint64_t term=0;
+        uint64_t leader = 0;
+        uint64_t term = 0;
         raft.rep->GetLeaderTerm(&leader, &term);
-        raft_term_info* info = new raft_term_info;
+        raft_term_info *info = new raft_term_info;
         info->leader = leader;
-        info->term = term; 
+        info->term = term;
         return info;
     }
 
-    void raft_free_raft_term_info(raft_term_info* info)
+    void raft_free_raft_term_info(raft_term_info *info)
     {
         free(info);
     }
-    
-    uint64_t raft_get_leader_from_raft_term_info(raft_term_info* info)
+
+    uint64_t raft_get_leader_from_raft_term_info(raft_term_info *info)
     {
         return info->leader;
     }
 
-    uint64_t raft_get_term_from_raft_term_info(raft_term_info* info)
+    uint64_t raft_get_term_from_raft_term_info(raft_term_info *info)
     {
         return info->term;
     }
 
-    jim_status_t* raft_try_to_leader(raft_cache &raft)
+    jim_status_t *raft_try_to_leader(raft_cache &raft)
     {
         Status status = raft.rep->TryToLeader();
-        jim_status_t* js = new jim_status_t;
+        jim_status_t *js = new jim_status_t;
         js->rep = status;
         return js;
     }
 
     void raft_propose(raft_cache &raft, char *data, size_t size, uint32_t flag, void *tag)
     {
-        std::string s(data,size);
+        std::string s(data, size);
         raft.rep->Propose(s, flag, tag);
     }
 
     // remeber free it after use
-    jim_status_t* raft_read_index(raft_cache &raft, char *ctx)
+    jim_status_t *raft_read_index(raft_cache &raft, char *ctx)
     {
         //TODO impl me
         return jim_status_create(1);
     }
 
     // remeber free it after use
-    jim_status_t* raft_change_member(raft_cache &raft, const raft_conf_change_t &conf)
+    jim_status_t *raft_change_member(raft_cache &raft, const raft_conf_change_t &conf)
     {
         Status status = raft.rep->ChangeMemeber(conf.rep);
-        jim_status_t* js = new jim_status_t;
+        jim_status_t *js = new jim_status_t;
         js->rep = status;
         return js;
     }
@@ -574,40 +573,45 @@ extern "C"
         //TODO impl me
     }
 
-    raft_log_reader_t* raft_begin_read_log(raft_cache &raft,uint64_t start_index)
+    raft_log_reader_t *raft_begin_read_log(raft_cache &raft, uint64_t start_index)
     {
         std::unique_ptr<LogReader> lr = raft.rep->ReadLog(start_index);
-        raft_log_reader_t* ret = new raft_log_reader_t;
+        raft_log_reader_t *ret = new raft_log_reader_t;
         ret->rep = std::move(lr);
-        return ret; 
+        return ret;
     }
 
-    void raft_end_read_log(raft_log_reader_t* log_reader)
+    void raft_end_read_log(raft_log_reader_t *log_reader)
     {
         free(log_reader);
     }
-  
-    // note: free data after use 
-    jim_status_t* raft_log_reader_next(raft_log_reader_t* log_reader,uint64_t* index, char* data, size_t* len, bool* over)
+
+    // note: free data after use
+    jim_status_t *raft_log_reader_next(raft_log_reader_t *log_reader, uint64_t *index, char **data, size_t *len, bool *over)
     {
         std::string _data;
         bool _over;
         uint64_t _index;
 
-        Status status = log_reader->rep->Next(_index,_data,_over);
-        size_t _len = _data.length();
+        Status status = log_reader->rep->Next(_index, _data, _over);
+        size_t _len = _data.size();
 
+        if (!_over)
+        {
+            char *x = (char *)malloc(_len);
+            memcpy(x, _data.data(), _len);
+            *data = x;
+        }
         *index = _index;
-        data = strndup(_data.c_str(),_len);
         *len = _len;
         *over = _over;
 
-        jim_status_t* js = new jim_status_t;
+        jim_status_t *js = new jim_status_t;
         js->rep = status;
         return js;
     }
 
-    uint64_t raft_log_reader_last_index(raft_log_reader_t* log_reader)
+    uint64_t raft_log_reader_last_index(raft_log_reader_t *log_reader)
     {
         return log_reader->rep->LastIndex();
     }
