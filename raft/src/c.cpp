@@ -175,7 +175,10 @@ extern "C"
     {
         ops.rep.statemachine = std::static_pointer_cast<StateMachine>(std::shared_ptr<raft_state_machine_t>(sm));
     }
-
+    void raft_options_set_storage_path(raft_options_t &ops, char *spath)
+    {
+        ops.rep.storage_path = std::string(spath);
+    }
     void raft_options_use_memory_storage(raft_options_t &ops, bool flag)
     {
         ops.rep.use_memory_storage = flag;

@@ -84,6 +84,7 @@ extern "C"
     extern RAFT_LIBRARY_API void raft_options_set_id(raft_options_t &ops, uint64_t id);
     extern RAFT_LIBRARY_API void raft_options_set_peer(raft_options_t &ops, raft_peers_t &peer);
     extern RAFT_LIBRARY_API void raft_options_set_state_machine(raft_options_t &ops, raft_state_machine_t *sm);
+    extern RAFT_LIBRARY_API void raft_options_set_storage_path(raft_options_t &opts, char *spath);
     extern RAFT_LIBRARY_API void raft_options_use_memory_storage(raft_options_t &ops, bool flag);
     //3.raft create
     extern RAFT_LIBRARY_API raft_cache *raft_create(raft_server_cache &server, raft_options_t &ops);
